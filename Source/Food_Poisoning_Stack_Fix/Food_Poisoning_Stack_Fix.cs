@@ -53,8 +53,10 @@ public class Food_Poisoning_Stack_Fix
                 return false;
             }
 
-            Traverse.Create(compFoodPoisonable).Field("poisonPct").SetValue((float)num2);
-            compFoodPoisonable.cause = ___cause;
+            AccessTools.Field(typeof(CompFoodPoisonable), "poisonPct").SetValue(compFoodPoisonable, num2);
+            AccessTools.Field(typeof(CompFoodPoisonable), "cause").SetValue(compFoodPoisonable, ___cause);
+            //Traverse.Create(compFoodPoisonable).Field("poisonPct").SetValue((float)num2);
+            //compFoodPoisonable.cause = ___cause;
             ___poisonPct = num;
 
             return false;
@@ -64,15 +66,21 @@ public class Food_Poisoning_Stack_Fix
             Thing otherStack)
         {
             var compFoodPoisonable = otherStack.TryGetComp<CompFoodPoisonable>();
-            if (__instance.cause == FoodPoisonCause.Unknown && compFoodPoisonable.cause != 0)
+
+            var causeField = AccessTools.Field(typeof(CompFoodPoisonable), "cause");
+            var instanceValue = (FoodPoisonCause)causeField.GetValue(__instance);
+            var otherValue = (FoodPoisonCause)causeField.GetValue(compFoodPoisonable);
+            if (instanceValue == FoodPoisonCause.Unknown && otherValue != 0)
             {
-                __instance.cause = compFoodPoisonable.cause;
+                causeField.SetValue(__instance, otherValue);
+                //__instance.cause = otherValue;
             }
-            else if (compFoodPoisonable.cause != 0 || __instance.cause != 0)
+            else if (otherValue != 0 || instanceValue != 0)
             {
-                __instance.cause = ___poisonPct <= compFoodPoisonable.PoisonPercent
-                    ? compFoodPoisonable.cause
-                    : __instance.cause;
+                causeField.SetValue(__instance,
+                    //__instance.cause = otherValue;
+                    ___poisonPct <= compFoodPoisonable.PoisonPercent ? otherValue : instanceValue);
+                //__instance.cause = __instance.cause;
             }
 
             ___poisonPct += compFoodPoisonable.PoisonPercent;
