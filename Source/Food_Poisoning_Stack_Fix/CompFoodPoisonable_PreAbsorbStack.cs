@@ -7,22 +7,21 @@ namespace Food_Poisoning_Stack_Fix;
 [HarmonyPatch(typeof(CompFoodPoisonable), nameof(CompFoodPoisonable.PreAbsorbStack))]
 public static class CompFoodPoisonable_PreAbsorbStack
 {
-    private static bool Prefix(CompFoodPoisonable __instance, ref float ___poisonPct,
+    private static bool Prefix(CompFoodPoisonable __instance, ref float ___poisonPct, FoodPoisonCause ___cause,
         Thing otherStack, int count)
     {
         var compFoodPoisonable = otherStack.TryGetComp<CompFoodPoisonable>();
 
         var causeField = AccessTools.Field(typeof(CompFoodPoisonable), "cause");
-        var instanceValue = (FoodPoisonCause)causeField.GetValue(__instance);
         var otherValue = (FoodPoisonCause)causeField.GetValue(compFoodPoisonable);
-        if (instanceValue == FoodPoisonCause.Unknown && otherValue != 0)
+        if (___cause == FoodPoisonCause.Unknown && otherValue != 0)
         {
             causeField.SetValue(__instance, otherValue);
         }
-        else if (otherValue != 0 || instanceValue != 0)
+        else if (otherValue != 0 || ___cause != 0)
         {
             causeField.SetValue(__instance,
-                ___poisonPct <= compFoodPoisonable.PoisonPercent ? otherValue : instanceValue);
+                ___poisonPct <= compFoodPoisonable.PoisonPercent ? otherValue : ___cause);
         }
 
         var otherPoisonCount = (int)compFoodPoisonable.PoisonPercent;
@@ -56,8 +55,7 @@ public static class CompFoodPoisonable_PreAbsorbStack
             }
 
             // Adjust the source stack so it no longer claims the drawn meals are poisoned
-            AccessTools.Field(typeof(CompFoodPoisonable), "poisonPct")
-                .SetValue(compFoodPoisonable, compFoodPoisonable.PoisonPercent - drawnPoisoned);
+            ___poisonPct = compFoodPoisonable.PoisonPercent - drawnPoisoned;
         }
 
         ___poisonPct += drawnPoisoned;
